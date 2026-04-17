@@ -3,6 +3,8 @@
 
 #include "rijndael.h"
 
+
+
 void print_block(unsigned char *block, aes_block_size_t block_size) {
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
