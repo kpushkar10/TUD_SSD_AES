@@ -166,9 +166,35 @@ void shift_rows(unsigned char *block, aes_block_size_t block_size) {
     }
 }
 
+/* ----------------------------------------------------------
+ * MixColumns: multiply each column by the AES MixColumns matrix in GF(2^8)
+ *
+ * Matrix:
+ *   [ 2  3  1  1 ]
+ *   [ 1  2  3  1 ]
+ *   [ 1  1  2  3 ]
+ *   [ 3  1  1  2 ]
+ *
+ * Column col contains bytes: block[0*cols+col], block[1*cols+col],
+ *                            block[2*cols+col], block[3*cols+col]
+ * ---------------------------------------------------------- */
 void mix_columns(unsigned char *block, aes_block_size_t block_size) {
-  // TODO: Implement me!
+  int cols = block_num_cols(block_size);
+ 
+  for (int col = 0; col < cols; col++) {
+    unsigned char s0 = block[0 * cols + col];
+    unsigned char s1 = block[1 * cols + col];
+    unsigned char s2 = block[2 * cols + col];
+    unsigned char s3 = block[3 * cols + col];
+
+    block[0 * cols + col] = xtime(s0) ^ xtime(s1) ^ s1 ^ s2 ^ s3;
+    block[1 * cols + col] = s0 ^ xtime(s1) ^ xtime(s2) ^ s2 ^ s3;
+    block[2 * cols + col] = s0 ^ s1 ^ xtime(s2) ^ xtime(s3) ^ s3;
+    block[3 * cols + col] = xtime(s0) ^ s0 ^ s1 ^ s2 ^ xtime(s3);
+  }
 }
+
+
 
 /*
  * Operations used when decrypting a block
