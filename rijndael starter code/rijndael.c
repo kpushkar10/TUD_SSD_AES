@@ -145,9 +145,25 @@ void sub_bytes(unsigned char *block, aes_block_size_t block_size) {
   }
 }
 
-
+/* ----------------------------------------------------------
+ * ShiftRows: cyclically shift row i left by i positions
+ *
+ * Row 0: no shift
+ * Row 1: shift left 1
+ * Row 2: shift left 2
+ * Row 3: shift left 3
+ * ---------------------------------------------------------- */
 void shift_rows(unsigned char *block, aes_block_size_t block_size) {
-  // TODO: Implement me!
+  int cols = block_num_cols(block_size);
+    unsigned char temp[cols];
+ 
+    for (int row = 1; row < 4; row++) {
+      /* Copy current row into temp with a left-shift of 'row' positions */
+      for (int col = 0; col < cols; col++) {
+          temp[col] = block[row * cols + ((col + row) % cols)];
+      }
+      memcpy(&block[row * cols], temp, cols);
+    }
 }
 
 void mix_columns(unsigned char *block, aes_block_size_t block_size) {
@@ -168,8 +184,21 @@ void invert_sub_bytes(unsigned char *block, aes_block_size_t block_size) {
   }
 }
 
+
+/* ----------------------------------------------------------
+ *  invert_shift_rows: shift row i right by i positions
+ * ---------------------------------------------------------- */
 void invert_shift_rows(unsigned char *block, aes_block_size_t block_size) {
-  // TODO: Implement me!
+  int cols = block_num_cols(block_size);
+  unsigned char temp[cols];
+
+  for (int row = 1; row < 4; row++) {
+    /* Right shift = left shift by (cols - row) */
+    for (int col = 0; col < cols; col++) {
+      temp[col] = block[row * cols + ((col - row + cols) % cols)];
+    }
+    memcpy(&block[row * cols], temp, cols);
+  }
 }
 
 void invert_mix_columns(unsigned char *block, aes_block_size_t block_size) {
