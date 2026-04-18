@@ -343,17 +343,74 @@ unsigned char *expand_key(unsigned char *cipher_key, aes_block_size_t block_size
 unsigned char *aes_encrypt_block(unsigned char *plaintext,
                                  unsigned char *key,
                                  aes_block_size_t block_size) {
-  // TODO: Implement me!
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * block_size_to_bytes(block_size));
+  size_t n = block_size_to_bytes(block_size);
+  int num_rounds = block_num_rounds(block_size);
+
+
+  unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * block_size_to_bytes(block_size));
+    
+  if (!output) {
+    fprintf(stderr, "aes_encrypt_block: malloc failed\n");
+    free(expanded);
+    exit(1);
+  }
+  memcpy(output, plaintext, n);
+
+  /* Initial round key addition */
+  add_round_key(output, expanded, block_size);
+
+  /* Main rounds */
+  for (int round = 1; round < num_rounds; round++) {
+    sub_bytes(output, block_size);
+    shift_rows(output, block_size);
+    mix_columns(output, block_size);
+    add_round_key(output, expanded + round * n, block_size);
+  }
+
+  /* Final round (no MixColumns) */
+  sub_bytes(output, block_size);
+  shift_rows(output, block_size);
+  add_round_key(output, expanded + num_rounds * n, block_size);
+
+  free(expanded);
   return output;
+
 }
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext,
                                  unsigned char *key,
                                  aes_block_size_t block_size) {
-  // TODO: Implement me!
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * block_size_to_bytes(block_size));
+
+  size_t n = block_size_to_bytes(block_size);
+  int num_rounds = block_num_rounds(block_size);
+  
+  unsigned char *expanded = expand_key(key, block_size);
+
+  unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * block_size_to_bytes(block_size));
+  
+  if (!output) {
+    fprintf(stderr, "aes_decrypt_block: malloc failed\n");
+    free(expanded);
+    exit(1);
+  }
+
+  memcpy(output, ciphertext, n);
+
+  /* Undo the final encryption round key */
+  add_round_key(output, expanded + num_rounds * n, block_size);
+
+  for (int round = num_rounds - 1; round >= 1; round--) {
+    invert_shift_rows(output, block_size);
+    invert_sub_bytes(output, block_size);
+    add_round_key(output, expanded + round * n, block_size);
+    invert_mix_columns(output, block_size);
+  }
+
+  /* Undo the initial (round 0) addition */
+  invert_shift_rows(output, block_size);
+  invert_sub_bytes(output, block_size);
+  add_round_key(output, expanded, block_size);
+
+  free(expanded);
   return output;
 }
