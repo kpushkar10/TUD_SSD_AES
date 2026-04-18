@@ -288,8 +288,52 @@ void add_round_key(unsigned char *block,
  * vector, containing the 11 round keys one after the other
  */
 unsigned char *expand_key(unsigned char *cipher_key, aes_block_size_t block_size) {
-  // TODO: Implement me!
-  return 0;
+  size_t key_bytes  = block_size_to_bytes(block_size);
+    int    num_rounds = block_num_rounds(block_size);
+    int    Nk         = (int)(key_bytes / 4);  /* words in original key */
+    size_t total      = key_bytes * (num_rounds + 1);
+ 
+    unsigned char *expanded = (unsigned char *)malloc(total);
+    if (!expanded) {
+        fprintf(stderr, "expand_key: malloc failed\n");
+        exit(1);
+    }
+ 
+    /* Copy original key as first round key */
+    memcpy(expanded, cipher_key, key_bytes);
+ 
+    int bytes_done = (int)key_bytes;
+    int rcon_idx   = 1;
+ 
+    unsigned char temp[4];
+ 
+    while (bytes_done < (int)total) {
+        /* temp = last 4 bytes generated */
+        memcpy(temp, expanded + bytes_done - 4, 4);
+ 
+        if ((bytes_done / 4) % Nk == 0) {
+            /* RotWord: rotate left by 1 byte */
+            unsigned char t = temp[0];
+            temp[0] = temp[1];
+            temp[1] = temp[2];
+            temp[2] = temp[3];
+            temp[3] = t;
+ 
+            /* SubWord: apply S-Box to each byte */
+            for (int i = 0; i < 4; i++) temp[i] = sbox[temp[i]];
+ 
+            /* XOR with round constant */
+            temp[0] ^= rcon[rcon_idx++];
+        }
+ 
+        /* XOR temp with the word Nk positions back */
+        for (int i = 0; i < 4; i++) {
+            expanded[bytes_done] = expanded[bytes_done - key_bytes] ^ temp[i];
+            bytes_done++;
+        }
+    }
+ 
+    return expanded;
 }
 
 /*
