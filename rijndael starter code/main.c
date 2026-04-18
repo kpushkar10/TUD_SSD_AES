@@ -40,6 +40,13 @@ int main() {
   printf("\n\n########### RECOVERED PLAINTEXT ###########\n");
   print_block(recovered_plaintext, AES_BLOCK_128);
 
+  /* Verify round-trip */
+  int ok = 1;
+  for (int i = 0; i < 16; i++) {
+    if (plaintext[i] != recovered_plaintext[i]) { ok = 0; break; }
+  }
+  printf("\n\nRound-trip test: %s\n", ok ? "PASS" : "FAIL");
+
   free(ciphertext);
   free(recovered_plaintext);
 
