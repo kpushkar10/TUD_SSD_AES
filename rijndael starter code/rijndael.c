@@ -131,6 +131,24 @@ char *message(char n) {
   return output;
 }
 
+/* Multiply a byte by 2 in GF(2^8) */
+static unsigned char xtime(unsigned char a) {
+    return (a & 0x80) ? ((unsigned char)((a << 1) ^ 0x1b)) : (unsigned char)(a << 1);
+}
+ 
+/* General multiplication in GF(2^8) using the "Russian peasant" method */
+static unsigned char gmul(unsigned char a, unsigned char b) {
+    unsigned char p = 0;
+    for (int i = 0; i < 8; i++) {
+        if (b & 1) p ^= a;
+        unsigned char hi = a & 0x80;
+        a <<= 1;
+        if (hi) a ^= 0x1b;
+        b >>= 1;
+    }
+    return p;
+}
+
 /*
  * Operations used when encrypting a block
  */
@@ -227,8 +245,29 @@ void invert_shift_rows(unsigned char *block, aes_block_size_t block_size) {
   }
 }
 
+/* ----------------------------------------------------------
+ *  Multiply each column by inverse mixColumns matrix
+
+ * Inverse matrix:
+ *  [ 14  11  13   9 ]
+ *  [  9  14  11  13 ]
+ *  [ 13   9  14  11 ]
+ *  [ 11  13   9  14 ]
+ * ---------------------------------------------------------- */
 void invert_mix_columns(unsigned char *block, aes_block_size_t block_size) {
-  // TODO: Implement me!
+  int cols = block_num_cols(block_size);
+ 
+  for (int col = 0; col < cols; col++) {
+    unsigned char s0 = block[0 * cols + col];
+    unsigned char s1 = block[1 * cols + col];
+    unsigned char s2 = block[2 * cols + col];
+    unsigned char s3 = block[3 * cols + col];
+
+    block[0 * cols + col] = gmul(14,s0) ^ gmul(11,s1) ^ gmul(13,s2) ^ gmul( 9,s3);
+    block[1 * cols + col] = gmul( 9,s0) ^ gmul(14,s1) ^ gmul(11,s2) ^ gmul(13,s3);
+    block[2 * cols + col] = gmul(13,s0) ^ gmul( 9,s1) ^ gmul(14,s2) ^ gmul(11,s3);
+    block[3 * cols + col] = gmul(11,s0) ^ gmul(13,s1) ^ gmul( 9,s2) ^ gmul(14,s3);
+  }
 }
 
 /*
