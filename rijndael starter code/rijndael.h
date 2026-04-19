@@ -1,6 +1,8 @@
 /*
- * TODO: Add your name and student number here, along with
- *       a brief description of this code.
+ * NAME: PUSHKAR KONASIRASGI
+ * STUDENT NUMBER: A00046956
+ * DESCRIPTION OF CODE: Public API for the AES (Rijndael) block cipher library.
+ * Supports 128-bit, 256-bit, and 512-bit block sizes.
  */
 
 #ifndef RIJNDAEL_H

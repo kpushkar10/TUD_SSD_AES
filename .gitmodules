@@ -1,3 +1,6 @@
 [submodule "aes"]
 	path = aes
 	url = https://github.com/boppreh/aes
+[submodule "rijndael starter code/aes"]
+	path = rijndael starter code/aes
+	url = https://github.com/boppreh/aes
